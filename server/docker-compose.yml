@@ -3,6 +3,8 @@ version: "3.8"
 x-runner-common: &runner-common
   image: myoung34/github-runner:ubuntu-jammy
   restart: unless-stopped
+  env_file:
+    - .env
   environment: &runner-env
     REPO_URL: ${REPO_URL}
     ACCESS_TOKEN: ${GITHUB_ACCESS_TOKEN}
