@@ -1,0 +1,43 @@
+version: "3.8"
+
+x-runner-common: &runner-common
+  image: myoung34/github-runner:ubuntu-jammy
+  restart: unless-stopped
+  environment: &runner-env
+    REPO_URL: ${REPO_URL}
+    ACCESS_TOKEN: ${GITHUB_ACCESS_TOKEN}
+    RUNNER_SCOPE: repo
+    LABELS: self-hosted,linux,x64,opencode
+    RUNNER_WORKDIR: /_work
+    EPHEMERAL: "false"
+    DISABLE_AUTO_UPDATE: "true"
+    RUN_AS_ROOT: "true"
+    UNSET_CONFIG_VARS: "true"
+  volumes:
+    - /var/run/docker.sock:/var/run/docker.sock
+    - ./sessions:/sessions
+    - /home/ubuntu/.config/opencode:/root/.config/opencode:ro
+  security_opt:
+    - label:disable
+
+services:
+  runner-1:
+    <<: *runner-common
+    container_name: gh-runner-1
+    environment:
+      <<: *runner-env
+      RUNNER_NAME: opencode-runner-1
+
+  runner-2:
+    <<: *runner-common
+    container_name: gh-runner-2
+    environment:
+      <<: *runner-env
+      RUNNER_NAME: opencode-runner-2
+
+  runner-3:
+    <<: *runner-common
+    container_name: gh-runner-3
+    environment:
+      <<: *runner-env
+      RUNNER_NAME: opencode-runner-3

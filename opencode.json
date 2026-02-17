@@ -1,0 +1,251 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "theme": "opencode",
+  "autoupdate": true,
+  "mcp": {
+    "shadcn": {
+      "type": "local",
+      "command": ["npx", "shadcn@latest", "mcp"],
+      "enabled": true
+    },
+    "context7": {
+      "type": "remote",
+      "url": "https://mcp.context7.com/mcp",
+      "headers": {
+        "CONTEXT7_API_KEY": "{env:CONTEXT7_API_KEY}"
+      },
+      "enabled": true
+    },
+    "deepwiki": {
+      "type": "remote",
+      "url": "https://mcp.deepwiki.com/mcp",
+      "enabled": true
+    },
+    "github": {
+      "type": "remote",
+      "headers": {
+        "Authorization": "Bearer {env:GITHUB_ACCESS_TOKEN}"
+      },
+      "url": "https://api.githubcopilot.com/mcp"
+    }
+  },
+  "tools": {
+    "github_*": false,
+    "github_add_issue_comment": true,
+    "github_issue_write": true,
+    "github_issue_read": true
+  },
+  "small_model": "cliproxy/vertex-gemini-3-flash-preview",
+  "provider": {
+    "cliproxy": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "CLIProxyAPI",
+      "id": "cliproxy",
+      "options": {
+        "baseURL": "https://cli.ali-ayati.com/v1",
+        "apiKey": "{env:CLIPROXY_API_KEY}"
+      },
+      "models": {
+        "vertex-gemini-2.5-flash": {
+          "name": "gemini 2.5 flash (Vertex)",
+          "limit": {
+            "context": 1000000,
+            "output": 65536
+          },
+          "modalities": {
+            "input": ["text", "image"],
+            "output": ["text"]
+          }
+        },
+        "vertex-deepseek-chat": {
+          "name": "deepseek chat (Vertex)",
+          "limit": {
+            "context": 128000,
+            "output": 8192
+          },
+          "modalities": {
+            "input": ["text", "image"],
+            "output": ["text"]
+          }
+        },
+        "vertex-deepseek-reasoner": {
+          "name": "deepseek reasoner (Vertex)",
+          "limit": {
+            "context": 128000,
+            "output": 64000
+          },
+          "modalities": {
+            "input": ["text", "image"],
+            "output": ["text"]
+          }
+        },
+        "vertex-gemini-2.5-pro": {
+          "name": "gemini 2.5 pro (Vertex)",
+          "limit": {
+            "context": 1000000,
+            "output": 65536
+          },
+          "modalities": {
+            "input": ["text", "image"],
+            "output": ["text"]
+          }
+        },
+        "vertex-gemini-3-pro-preview": {
+          "name": "gemini 3 pro preview (Vertex)",
+          "limit": {
+            "context": 1000000,
+            "output": 65536
+          },
+          "modalities": {
+            "input": ["text", "image"],
+            "output": ["text"]
+          }
+        },
+        "vertex-gemini-3-pro-preview(low)": {
+          "name": "gemini 3 pro preview (Vertex) (low)",
+          "limit": {
+            "context": 1000000,
+            "output": 65536
+          },
+          "modalities": {
+            "input": ["text", "image"],
+            "output": ["text"]
+          }
+        },
+        "vertex-gemini-3-pro-preview(high)": {
+          "name": "gemini 3 pro preview (Vertex) (high)",
+          "limit": {
+            "context": 1000000,
+            "output": 65536
+          },
+          "modalities": {
+            "input": ["text", "image"],
+            "output": ["text"]
+          }
+        },
+        "vertex-gemini-3-flash-preview": {
+          "name": "gemini 3 flash preview (Vertex)",
+          "limit": {
+            "context": 1000000,
+            "output": 65536
+          },
+          "modalities": {
+            "input": ["text", "image"],
+            "output": ["text"]
+          }
+        },
+
+        "gpt-5.3-codex(low)": {
+          "name": "GPT-5.3 Codex (Low)",
+          "limit": {
+            "context": 400000,
+            "output": 128000
+          },
+          "modalities": {
+            "input": ["text", "image"],
+            "output": ["text"]
+          }
+        },
+        "gpt-5.3-codex(none)": {
+          "name": "GPT-5.3 Codex (None)",
+          "limit": {
+            "context": 400000,
+            "output": 128000
+          },
+          "modalities": {
+            "input": ["text", "image"],
+            "output": ["text"]
+          }
+        },
+        "gpt-5.3-codex(medium)": {
+          "name": "GPT-5.3 Codex (Medium)",
+          "limit": {
+            "context": 400000,
+            "output": 128000
+          },
+          "modalities": {
+            "input": ["text", "image"],
+            "output": ["text"]
+          }
+        },
+        "gpt-5.3-codex(high)": {
+          "name": "GPT-5.3 Codex (High)",
+          "limit": {
+            "context": 400000,
+            "output": 128000
+          },
+          "modalities": {
+            "input": ["text", "image"],
+            "output": ["text"]
+          }
+        },
+        "gpt-5.3-codex(xhigh)": {
+          "name": "GPT-5.3 Codex (XHigh)",
+          "limit": {
+            "context": 400000,
+            "output": 128000
+          },
+          "modalities": {
+            "input": ["text", "image"],
+            "output": ["text"]
+          }
+        },
+        "gpt-5.2(none)": {
+          "name": "GPT-5.2 (None)",
+          "limit": {
+            "context": 400000,
+            "output": 128000
+          },
+          "modalities": {
+            "input": ["text", "image"],
+            "output": ["text"]
+          }
+        },
+        "gpt-5.2(low)": {
+          "name": "GPT-5.2 (Low)",
+          "limit": {
+            "context": 400000,
+            "output": 128000
+          },
+          "modalities": {
+            "input": ["text", "image"],
+            "output": ["text"]
+          }
+        },
+        "gpt-5.2(medium)": {
+          "name": "GPT-5.2 (Medium)",
+          "limit": {
+            "context": 400000,
+            "output": 128000
+          },
+          "modalities": {
+            "input": ["text", "image"],
+            "output": ["text"]
+          }
+        },
+        "gpt-5.2(high)": {
+          "name": "GPT-5.2 (High)",
+          "limit": {
+            "context": 400000,
+            "output": 128000
+          },
+          "modalities": {
+            "input": ["text", "image"],
+            "output": ["text"]
+          }
+        },
+        "gpt-5.2(xhigh)": {
+          "name": "GPT-5.2 (XHigh)",
+          "limit": {
+            "context": 400000,
+            "output": 128000
+          },
+          "modalities": {
+            "input": ["text", "image"],
+            "output": ["text"]
+          }
+        }
+      }
+    }
+  }
+}
