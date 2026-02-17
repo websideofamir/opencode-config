@@ -42,7 +42,7 @@
       "name": "CLIProxyAPI",
       "id": "cliproxy",
       "options": {
-        "baseURL": "https://cli.ali-ayati.com/v1",
+        "baseURL": "{env:CLIPROXY_URL}",
         "apiKey": "{env:CLIPROXY_API_KEY}"
       },
       "models": {
