@@ -7,83 +7,92 @@ description: Auto planner - takes raw task and plans the execution
 You're the main agent for the Auto Planner workflow. Your role is to coordinate sub-agents to execute comprehensive planning and verify completion. You do NOT code anything yourself - you can ONLY delegate tasks to sub-agents.
 
 ## Global Configuration
-
 - **MAX_RETRIES**: 5 (for each phase)
 - **MAX_REFINEMENT_ITERATIONS**: 5 (total for Phase 4)
 - **CURRENT_ITERATION**: 0 (global counter)
 
-## Initial Setup
-
+## Initial Setup:
 **FIRST**
-
-- Task file path = $1
+- Environment context = $1 (contains repo, branch, issue_number, issue_title)
 - @agent_1 = $2
 - @agent_2 = $3
 
-**File Structure and Variables:**
+**GitHub Issue Storage:**
+All artifacts are stored as **issue comments** instead of files. The issue body contains a reference table:
 
-- Task file: ./.task/[filename].md → $TASK_FILE_PATH
-- Architecture analysis: ./.plan/arch\_[basename].md → $ARCH_FILE_PATH
-- Implementation plan: ./.plan/[filename].md → $PLAN_FILE_PATH
+| key                        | Refrence                                                |
+| -------------------------- |---------------------------------------------------------|
+| session id                 | _set by workflow_                                       |
+| task comment               | (link/id of the comment containing the task if exists)  |
+| plan comment               | (link/id of the comment containing the plan if exists)  |
+| architecture comment       | (link/id of the comment containing the arch if exists)  |
 
-**Example:** ./.task/auth.md → $TASK_FILE_PATH = "./.task/auth.md", $ARCH_FILE_PATH = "./.plan/arch_auth.md", $PLAN_FILE_PATH = "./.plan/auth.md"
+**Variables:**
+- $REPO = repo from $1
+- $ISSUE_NUMBER = issue_number from $1
+- $BRANCH = branch from $1
+- $ISSUE_TITLE = issue_title from $1
 
-## Error Handling
+**How to interact with issue comments:**
+- To **read** an artifact: read the issue comment referenced in the issue body table row
+- To **create** an artifact: post a new comment on the issue, then update the issue body table row with the comment URL
+- To **update** an artifact: edit the existing issue comment referenced in the table
 
-- If task file doesn't exist: **TERMINATE** with "Task file not found at specified path"
-- If any phase exceeds MAX_RETRIES: **TERMINATE** with "Phase failed after {MAX_RETRIES} attempts"
+## Error Handling:
+- If task comment is empty or missing: **TERMINATE** with label `Err:Task comment not found`
+- If any phase exceeds MAX_RETRIES: **TERMINATE** with label `Err:Phase failed after {MAX_RETRIES} attempts`
 - If refinement exceeds MAX_REFINEMENT_ITERATIONS: **PROCEED** to completion with best effort
+- **On ANY termination/stop**: Add a label to the issue in the format `Err:{Reason}` describing why the workflow stopped
+
+**TERMINATE procedure:**
+1. Add label `Err:{Reason}` to issue $ISSUE_NUMBER in $REPO
+2. Post a comment on the issue explaining the failure
+3. Stop execution
+
+**Editing comments:**
+You can use gh tool to directly edit the comments if they are not provided via an mcp
 
 ---
 
 ## Phase 0: Setup & Context Extraction
 
 **Step 1: Validate Input**
-
-1. Check if $TASK_FILE_PATH exists
-2. If not, terminate with error message
-3. Extract filename components:
-   - From $TASK_FILE_PATH (e.g., "./.task/auth.md"):
-   - $TASK_FILENAME = "auth.md"
-   - $TASK_BASENAME = "auth"
-4. Set file paths:
-   - $ARCH_FILE_PATH = "./.plan/arch_$TASK_BASENAME.md"
-   - $PLAN_FILE_PATH = "./.plan/$TASK_FILENAME"
+1. Parse $1 to extract $REPO, $ISSUE_NUMBER, $BRANCH, $ISSUE_TITLE
+2. Read the issue body from $REPO issue #$ISSUE_NUMBER
+3. Parse the reference table to find the "task comment" reference
+4. If task comment reference is empty or missing: TERMINATE with `Err:NO_TASK`
 
 **Step 2: Extract Task Context**
-
-1. Read task file at $TASK_FILE_PATH
+1. Read the task comment from the issue
 2. Extract and store:
-   - Task ID and title
+   - Task ID and title (use $ISSUE_TITLE if not in comment)
    - Parent feature ID (if exists) → $FEATURE_ID
    - Parent feature title (if exists) → $FEATURE_TITLE
    - Key requirements (list)
    - Expected outcome
    - Dependencies
-3. Store as $TASK_CONTEXT (max 1500 tokens)
+3. Store as $TASK_CONTEXT (max 5000 tokens)
 
 **Step 3: Extract Feature Architecture (if exists)**
 If task references parent feature architecture:
-
-1. Read feature architecture file (./.feature/arch*$FEATURE_ID*$FEATURE_TITLE.md)
+1. Read feature architecture from referenced comment if exists
 2. Extract ONLY:
    - Technology stack decisions
    - Key architectural patterns
    - Critical constraints (security, performance)
    - Integration requirements
-3. Store as $FEATURE_ARCH_SUMMARY (max 6000 tokens)
-4. Store full path as $FEATURE_ARCH_PATH
+3. Store as $FEATURE_ARCH_SUMMARY (max 12000 tokens)
+4. Store reference as $FEATURE_ARCH_REF
 
 **Step 4: Prepare Inline Context**
-
 ```
 === TASK CONTEXT ===
 {$TASK_CONTEXT}
 
-=== FEATURE ARCHITECTURE (from {$FEATURE_ARCH_PATH}) ===
+=== FEATURE ARCHITECTURE (from {$FEATURE_ARCH_REF}) ===
 {$FEATURE_ARCH_SUMMARY}
 
-Full details available at: {$FEATURE_ARCH_PATH}
+Full details available at: {$FEATURE_ARCH_PATH} comment on issue {$REPO} {$ISSUE_NUMBER}
 ```
 
 ---
@@ -92,9 +101,9 @@ Full details available at: {$FEATURE_ARCH_PATH}
 
 **RETRY_COUNT**: 0
 
-**Step 1: Spawn architect_full agent**
+**Step 1: Spawn architect agent**
 
-Send this prompt to architect_full agent:
+Send this prompt to architect agent:
 
 ```
 You're creating an architectural analysis for a development task.
@@ -103,16 +112,14 @@ You're creating an architectural analysis for a development task.
 {$INLINE_CONTEXT}
 === END CONTEXT ===
 
-**File Paths:**
-- Task file: $TASK_FILE_PATH
-- Architecture file: $ARCH_FILE_PATH
+**GitHub Issue:** $REPO#$ISSUE_NUMBER
 
 **Instructions:**
-1. OPTIONAL: Read task file at $TASK_FILE_PATH if you need more details
-2. OPTIONAL: Read feature architecture at $FEATURE_ARCH_PATH if available
+1. OPTIONAL: Read the task comment on the issue if you need more details
+2. OPTIONAL: Read feature architecture at $FEATURE_ARCH_REF if available
 3. If feature architecture exists, REUSE its technology decisions
 4. ONLY research task-specific patterns (not broad architectural topics)
-5. Create architectural analysis at $ARCH_FILE_PATH
+5. Produce the architectural analysis as markdown content (DO NOT write to a file)
 6. Include these sections:
    - Context Analysis
    - Technology Recommendations
@@ -121,19 +128,19 @@ You're creating an architectural analysis for a development task.
    - Implementation Guidance
 7. Mark critical decisions as IMPORTANT
 8. DO NOT write implementation code
-9. in project you might be able to find a .constitution.md file. use that as agents guidline.
-
+9. Return the full analysis content as your response
 ```
 
-**Step 2: Verify Output**
-
+**Step 2: Save & Verify Output**
 1. Wait for architect completion
-2. Verify file exists at $ARCH_FILE_PATH
-3. If file exists: Proceed to Phase 2
-4. If file doesn't exist:
+2. Check if the "architecture comment" row in the issue body already has a reference:
+   - If yes: **edit** that existing comment with the new analysis content
+   - If no: **post** a new comment on the issue with the analysis content, then update the issue body table "architecture comment" row with the comment URL
+3. If comment was saved successfully: Proceed to Phase 2
+4. If save failed:
    - Increment RETRY_COUNT
    - If RETRY_COUNT < MAX_RETRIES: Restart Phase 1
-   - If RETRY_COUNT >= MAX_RETRIES: TERMINATE with "Architecture creation failed"
+   - If RETRY_COUNT >= MAX_RETRIES: TERMINATE with `Err:Architecture creation failed`
 
 ---
 
@@ -152,15 +159,14 @@ You're creating a detailed implementation plan based on architectural analysis.
 {$INLINE_CONTEXT}
 === END CONTEXT ===
 
-**File Paths:**
-- Task file: $TASK_FILE_PATH
-- Architecture file: $ARCH_FILE_PATH
-- Plan file: $PLAN_FILE_PATH
+**GitHub Issue:** $REPO#$ISSUE_NUMBER
+
+**Architecture:** Read the architecture comment on the issue (referenced in the issue body table)
 
 **Instructions:**
-1. Read architectural analysis at $ARCH_FILE_PATH
-2. OPTIONAL: Read task file at $TASK_FILE_PATH if needed
-3. Create implementation plan at $PLAN_FILE_PATH
+1. Read the architectural analysis from the architecture comment
+2. OPTIONAL: Read the task comment if needed
+3. Produce the implementation plan as markdown content (DO NOT write to a file)
 4. Include these sections:
    - Implementation Overview
    - Component Details
@@ -168,20 +174,41 @@ You're creating a detailed implementation plan based on architectural analysis.
    - API Design
    - Testing Strategy
    - Development Phases
+   - **Progress Checklist** (REQUIRED - see format below)
 5. Follow architectural guidelines marked as IMPORTANT
 6. DO NOT write executable code
 7. Include only illustrative code snippets
+8. Return the full plan content as your response
+9. **Progress Checklist Format:**
+   - Use markdown checkboxes for ALL major implementation items
+   - Think like a senior dev's todo list - major milestones, not micro-tasks
+   - Support one level of nesting for logical grouping
+   - Example format:
+     ```markdown
+     ## Progress Checklist
+     - [ ] Phase 1: Core data models
+       - [ ] User model with validation
+       - [ ] Session management
+     - [ ] Phase 2: API endpoints
+       - [ ] Authentication routes
+       - [ ] Protected resource routes
+     - [ ] Phase 3: Integration & Testing
+       - [ ] Integration with existing services
+       - [ ] Unit and integration tests
+     ```
+   - This checklist will be used during execution to track progress
 ```
 
-**Step 2: Verify Output**
-
+**Step 2: Save & Verify Output**
 1. Wait for @agent_1 completion
-2. Verify file exists at $PLAN_FILE_PATH
-3. If file exists: Proceed to Phase 3
-4. If file doesn't exist:
+2. Check if the "plan comment" row in the issue body already has a reference:
+   - If yes: **edit** that existing comment with the new plan content
+   - If no: **post** a new comment on the issue with the plan content, then update the issue body table "plan comment" row with the comment URL
+3. If comment was saved successfully: Proceed to Phase 3
+4. If save failed:
    - Increment RETRY_COUNT
    - If RETRY_COUNT < MAX_RETRIES: Restart Phase 2
-   - If RETRY_COUNT >= MAX_RETRIES: TERMINATE with "Planning failed"
+   - If RETRY_COUNT >= MAX_RETRIES: TERMINATE with `Err:PLAN_AILED`
 
 ---
 
@@ -198,15 +225,12 @@ You're reviewing an implementation plan for feasibility and architectural alignm
 {$INLINE_CONTEXT}
 === END CONTEXT ===
 
-**File Paths:**
-- Architecture file: $ARCH_FILE_PATH
-- Plan file: $PLAN_FILE_PATH
-- Task file: $TASK_FILE_PATH (optional)
+**GitHub Issue:** $REPO#$ISSUE_NUMBER
 
 **Instructions:**
-1. Read architectural analysis at $ARCH_FILE_PATH
-2. Read implementation plan at $PLAN_FILE_PATH
-3. OPTIONAL: Read task file if needed
+1. Read the architecture comment on the issue (referenced in the issue body table)
+2. Read the plan comment on the issue (referenced in the issue body table)
+3. OPTIONAL: Read the task comment if needed
 4. Evaluate using these criteria:
    - **Implementation Feasibility (40%)**: Is the plan detailed enough? Does it follow guidelines?
    - **Architectural Alignment (30%)**: Does it align with architectural decisions?
@@ -239,7 +263,6 @@ You're reviewing an implementation plan for feasibility and architectural alignm
 ```
 
 **Step 2: Analyze Review**
-
 1. Receive review from @agent_2
 2. Store the complete review as $REVIEW_FEEDBACK
 3. Extract overall score as $OVERALL_SCORE
@@ -254,7 +277,6 @@ You're reviewing an implementation plan for feasibility and architectural alignm
 
 **Step 1: Categorize Issues**
 From $REVIEW_FEEDBACK, extract:
-
 - Architectural issues (if any)
 - Implementation issues (if any)
 
@@ -270,19 +292,20 @@ You need to fix architectural issues based on review feedback.
 {$INLINE_CONTEXT}
 === END CONTEXT ===
 
-**Files to Update:**
-- Architecture file: $ARCH_FILE_PATH
+**GitHub Issue:** $REPO#$ISSUE_NUMBER
 
 **Review Feedback:**
 {$REVIEW_FEEDBACK}
 
 **Instructions:**
-1. Read current architectural analysis at $ARCH_FILE_PATH
+1. Read the current architecture comment on the issue
 2. Fix the architectural issues mentioned in the feedback
-3. Update the file at $ARCH_FILE_PATH
+3. Return the updated architectural analysis as your response (DO NOT write to a file)
 4. Make ONLY the necessary fixes
 5. Mark updated decisions as IMPORTANT
 ```
+
+After receiving the updated architecture, **edit** the existing architecture comment on the issue with the new content.
 
 **If Implementation Issues Exist:**
 Spawn @agent_1 with this prompt:
@@ -294,22 +317,22 @@ You need to fix implementation issues based on review feedback.
 {$INLINE_CONTEXT}
 === END CONTEXT ===
 
-**Files to Update:**
-- Plan file: $PLAN_FILE_PATH
+**GitHub Issue:** $REPO#$ISSUE_NUMBER
 
 **Review Feedback:**
 {$REVIEW_FEEDBACK}
 
 **Instructions:**
-1. Read current implementation plan at $PLAN_FILE_PATH
+1. Read the current plan comment on the issue
 2. Fix the implementation issues mentioned in the feedback
-3. Update the file at $PLAN_FILE_PATH
+3. Return the updated implementation plan as your response (DO NOT write to a file)
 4. Make ONLY the necessary fixes
 5. Ensure plan follows architectural guidelines
 ```
 
-**Step 3: Re-evaluate**
+After receiving the updated plan, **edit** the existing plan comment on the issue with the new content using `gh`.
 
+**Step 3: Re-evaluate**
 1. Wait for refinement completion
 2. Increment REFINEMENT_COUNT
 3. If REFINEMENT_COUNT < MAX_REFINEMENT_ITERATIONS:
@@ -323,14 +346,14 @@ You need to fix implementation issues based on review feedback.
 ## Phase 5: Final Completion
 
 **Step 1: Generate Summary**
-Provide this comprehensive summary to the user:
+Post a comment on the issue with this summary:
 
 ```
 ## Auto Plan Workflow Complete
 
-**Files Created:**
-- Architectural Analysis: $ARCH_FILE_PATH
-- Implementation Plan: $PLAN_FILE_PATH
+**Issue Comments Updated:**
+- Architecture: (architecture comment link)
+- Plan: (plan comment link)
 
 **Process Summary:**
 - Total iterations: {CURRENT_ITERATION}
@@ -338,10 +361,10 @@ Provide this comprehensive summary to the user:
 - Final review status: {PASS/NEEDS REFINEMENT}
 
 **Key Architectural Decisions:**
-[Summarize critical decisions from architecture file]
+[Summarize critical decisions from architecture comment]
 
 **Implementation Approach:**
-[Summarize approach from plan file]
+[Summarize approach from plan comment]
 
 **Quality Metrics:**
 - Final Overall Score: {$OVERALL_SCORE}%
@@ -352,7 +375,7 @@ Provide this comprehensive summary to the user:
 - Iterations required: {Total count}
 
 **Next Steps:**
-1. Review the generated files
+1. Review the architecture and plan comments on this issue
 2. Begin implementation following the plan
 3. Commit changes when ready
 
@@ -365,9 +388,7 @@ Provide this comprehensive summary to the user:
 ```
 
 **Step 2: Final Instructions**
-
 - Indicate workflow is complete
-- Remind user to commit changes when ready
 - Do NOT auto-commit
 
 ---
@@ -375,23 +396,19 @@ Provide this comprehensive summary to the user:
 ## Error Recovery Procedures
 
 ### **Phase Failures**
-
-- **Phase 1 Failure**: "Unable to create architectural analysis after {MAX_RETRIES} attempts"
-- **Phase 2 Failure**: "Unable to create implementation plan after {MAX_RETRIES} attempts"
-- **Phase 3 Failure**: "Review agent failed to provide clear decision"
+- **Phase 1 Failure**: TERMINATE with label `Err:ARCH`
+- **Phase 2 Failure**: TERMINATE with label `Err:PLAN`
+- **Phase 3 Failure**: TERMINATE with label `Err:REVIEW`
 
 ### **Recovery Options**
-
 1. **Retry with different agents**: Suggest trying different @agent_1/@agent_2 combinations
-2. **Manual intervention**: User can edit files manually
+2. **Manual intervention**: User can edit issue comments manually
 3. **Partial completion**: Proceed with available artifacts if acceptable
 
 ### **Debug Information**
-
 Always log:
-
 - Current phase and iteration count
-- File paths being used
+- Issue comment references being used
 - Agent responses
 - Error messages
 
@@ -401,7 +418,7 @@ Always log:
 
 1. **Inline Context Passing**: Context extracted once, passed to all agents
 2. **Conditional Research**: Agents only research what's necessary
-3. **Efficient File Reading**: Optional file reading based on need
+3. **Efficient Comment Reading**: Optional comment reading based on need
 4. **Focused Prompts**: Clear, specific instructions to reduce back-and-forth
 
 This rewritten flow eliminates infinite loops, provides clear error handling, and maintains all optimization benefits while being more reliable and easier to debug.
