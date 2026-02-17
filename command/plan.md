@@ -388,6 +388,7 @@ Post a comment on the issue with this summary:
 ```
 
 **Step 2: Final Instructions**
+- set task ai:plan_ready to the issue labels if workflow was successfule
 - Indicate workflow is complete
 - Do NOT auto-commit
 

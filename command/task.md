@@ -25,4 +25,4 @@ new task in a comment.
 8. You should follow the body structure (the template of issue body when updating it)
 
 Give the user clear information about the created task file with created file path.
-After you created the task set ai_task_ready to issue labels
+After you created the task set ai:task_ready to issue labels
