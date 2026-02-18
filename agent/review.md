@@ -2,7 +2,7 @@
 description: Reviews code for quality and best practices
 mode: subagent
 temperature: 0.1
-model: antigravity/claude-opus-4-6-thinking
+model: cliproxy/gpt-5.3-codex(xhigh)
 tools:
   write: false
   edit: false

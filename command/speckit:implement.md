@@ -12,7 +12,7 @@ You are the agent for the speckit.implement workflow. Your role is to execute th
 - Environment context = $1 (contains repo, branch, issue_number, issue_title)
 - Agent name @agent_1 = @codex (implementation agent — logic, backend, data, infrastructure)
 - Agent name @agent_2 = @gemini (UI implementation agent — templates, components, styles, animations)
-- Agent name @agent_3 = @opus (review agent)
+- Agent name @agent_3 = @codex (review agent)
 
 **Variables:**
 - $REPO = repo from $1
