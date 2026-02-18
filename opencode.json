@@ -517,5 +517,11 @@
         }
       }
     }
+  },
+  "permission": {
+    "external_directory": {
+      "/tmp/**": "allow"
+    },
+    "doom_loop": "deny"
   }
 }
