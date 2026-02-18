@@ -50,6 +50,9 @@ All artifacts (task, plan, architecture) are stored as **issue comments**. The i
 2. Post a comment on the issue explaining the failure
 3. Stop execution
 
+## Updating based on user input
+if user directly requested to change the code you should redo this workflow and update the code based on user input, Plan and Architectural Analysis  
+
 ## Phase 0.5: Extract Essential Context
 
 **Step 1: Validate Input**

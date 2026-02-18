@@ -52,6 +52,9 @@ All artifacts are stored as **issue comments** instead of files. The issue body 
 **Editing comments:**
 You can use gh tool to directly edit the comments if they are not provided via an mcp
 
+## Updating based on user input
+if user requested to change the plan you should redo this workflow and update the Plan and Architectural Analysis based on the user input  
+
 ---
 
 ## Phase 0: Setup & Context Extraction

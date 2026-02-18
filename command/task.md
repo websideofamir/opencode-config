@@ -5,7 +5,7 @@ Environment details:
 $1
 
 
-Given the context of discussion, and the body of the issue, please create a new task in the issue comments. To create task you MUST follow these steps.
+Given the context of discussion, and the body of the issue, please create a new task (or change it if user requested) in the issue comments. To create task you MUST follow these steps.
 
 # Preparations
 
