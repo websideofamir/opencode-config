@@ -10,8 +10,9 @@ You are the agent for the speckit.implement workflow. Your role is to execute th
 
 **FIRST** - Parse the initial user prompt to extract:
 - Environment context = $1 (contains repo, branch, issue_number, issue_title)
-- Agent name @agent_1 = $2 (implementation agent)
+- Agent name @agent_1 = $2 (implementation agent — logic, backend, data, infrastructure)
 - Agent name @agent_2 = $3 (review agent)
+- Agent name @agent_3 = $4 (UI implementation agent — templates, components, styles, animations) default @codexUI
 
 **Variables:**
 - $REPO = repo from $1
@@ -160,11 +161,73 @@ Phase: [current phase name]
    - NEVER mark something complete unless it is actually done and working
 6. When finished, provide a summary of what was implemented and which files were modified
 
+**IMPORTANT — UI Boundary:**
+- Do NOT implement UI tasks (templates, components, styles, animations, layouts, pages, views).
+- If a task involves UI work, **skip it** and leave its checkbox as `[ ]`. It will be handled by the UI agent in a subsequent phase.
+- If a task has BOTH logic and UI parts, implement ONLY the logic portion (data models, API endpoints, business logic, services, hooks/controllers). Leave any UI rendering, templates, styling, or animation work for the UI agent.
+- When you skip or partially complete a UI-related task, note it in your summary so the UI agent knows what to pick up.
+- if a task for the skipped work doesnt exist make sure to add it to the plan checklist
+
 **Tasks for this phase:**
 [List the specific tasks for this phase]
 
 **Important:** Stay strictly within the scope of these tasks.
 ```
+
+---
+
+## Phase 2.5: UI Implementation
+
+After @agent_1 completes each phase, check if any UI tasks remain unchecked (`[ ]`) or were partially completed (logic done, UI pending).
+
+**Step 1: Detect UI Tasks**
+
+Scan the tasks comment for:
+- Tasks explicitly marked as UI (templates, components, views, pages, layouts, styles, animations)
+- Tasks that @agent_1 skipped or noted as UI-related in its summary
+- Any `[ ]` items that involve frontend/UI work
+
+**If NO UI tasks remain:** Skip to Phase 3.
+
+**If UI tasks exist:** Proceed to Step 2.
+
+**Step 2: Spawn @agent_3 (UI Implementation Agent)**
+
+For each phase that has pending UI tasks, spawn @agent_3 with this prompt:
+
+```
+You are tasked with implementing UI code — templates, components, styles, and animations — for a development plan.
+
+=== CONTEXT ===
+GitHub Issue: $REPO#$ISSUE_NUMBER
+Branch: $BRANCH
+Phase: [current phase name]
+=== END CONTEXT ===
+
+**Instructions:**
+1. Read the plan comment and tasks comment on issue $REPO#$ISSUE_NUMBER for full context
+2. Review what @agent_1 (the logic agent) has already implemented — read its committed code on branch $BRANCH to understand the data models, services, APIs, hooks, and controllers available to you
+3. Execute ONLY the UI tasks listed below
+4. Your scope is strictly: UI templates, components, views, pages, layouts, CSS/styles, and animations
+5. Wire your UI to the logic layer already implemented by @agent_1 (call existing services, use existing hooks/controllers, bind to existing data models)
+6. Do NOT modify logic, backend, data models, or business rules — if something is missing from the logic layer, note it in your summary instead of implementing it yourself
+7. Follow the plan EXACTLY — respect component hierarchies, screen breakdowns, styling approach, and accessibility requirements from the plan
+8. Commit your changes with meaningful commit messages
+9. **Progress Tracking (CRITICAL):**
+   - After completing each UI task, mark it as `[x]` in the tasks comment on the issue
+   - NEVER mark something complete unless it is actually done and working
+10. When finished, provide a summary of what was implemented and which files were created/modified
+
+**UI Tasks for this phase:**
+[List the specific UI tasks that @agent_1 left unchecked or partially completed]
+
+**Important:** Stay strictly within UI scope. Do not touch logic/backend code.
+```
+
+**Step 3: Verify UI Completion**
+1. After @agent_3 finishes, verify the UI tasks are marked `[x]` in the tasks comment
+2. If @agent_3 flagged missing logic-layer dependencies, spawn @agent_1 to fill those gaps, then re-run @agent_3 for the affected UI tasks
+3. Proceed to Phase 3
 
 ---
 
@@ -218,7 +281,14 @@ Branch: $BRANCH
    - Potential bugs and edge cases
    - Performance implications
    - Security considerations
-6. Calculate compliance score (0-100%):
+6. **UI Code Quality** (if UI tasks exist in the plan):
+   - Component structure and hierarchy match the plan
+   - UI correctly wires to the logic layer (services, hooks, controllers)
+   - Styles follow the plan's styling approach (design system, theme, responsive breakpoints)
+   - Accessibility requirements met (ARIA labels, keyboard navigation, screen reader support)
+   - Animation/transition quality and performance
+   - No business logic leaked into UI components — UI should only call the logic layer
+7. Calculate compliance score (0-100%):
    - **Checkbox completion ratio** (items marked [x] vs total)
    - How many plan items were fully implemented
    - Quality and correctness of the implementation
@@ -235,7 +305,9 @@ Branch: $BRANCH
 - Overall compliance score (%)
 - List of successfully implemented items
 - List of missed or incorrectly implemented items
-- Specific recommendations
+- **Logic Issues:** [tag each as LOGIC] — backend, data, services, infrastructure problems
+- **UI Issues:** [tag each as UI] — template, component, style, animation, accessibility problems
+- Specific recommendations (tagged LOGIC or UI)
 - Clear pass/fail recommendation (pass if 90%+)
 ```
 
@@ -253,28 +325,56 @@ Set label `speckit:impl_review` during this phase.
 
 1. Extract specific issues from review
 2. Extract unchecked `[ ]` items
-3. Spawn @agent_1 with fix instructions:
+3. Categorize issues as **LOGIC** or **UI** based on review tags
+
+**If LOGIC issues exist:**
+Spawn @agent_1 with fix instructions:
 
    ```
    You are tasked with implementing fixes based on review feedback.
 
-   **Unchecked Items:**
-   [List the [ ] items identified as incomplete]
+   **Unchecked Items (LOGIC only):**
+   [List the [ ] items identified as incomplete logic tasks]
 
-   **Issues to Fix:**
-   [List specific issues from review]
+   **Issues to Fix (LOGIC only):**
+   [List specific LOGIC-tagged issues from review]
 
    **Instructions:**
-   1. Focus on completing UNCHECKED items
-   2. Fix specific issues identified
+   1. Focus on completing UNCHECKED logic items
+   2. Fix specific LOGIC issues identified
    3. Make ONLY the fixes listed - no other changes
-   4. Mark completed items as [x] in tasks comment
-   5. Provide summary of fixes made
+   4. Do NOT touch UI code (templates, components, styles, animations) — leave those for the UI agent
+   5. Mark completed items as [x] in tasks comment
+   6. Provide summary of fixes made
    ```
+
+**If UI issues exist:**
+Spawn @agent_3 with fix instructions:
+
+   ```
+   You are tasked with fixing UI issues based on review feedback.
+
+   **Unchecked Items (UI only):**
+   [List the [ ] items identified as incomplete UI tasks]
+
+   **Issues to Fix (UI only):**
+   [List specific UI-tagged issues from review]
+
+   **Instructions:**
+   1. Focus on completing UNCHECKED UI items
+   2. Fix specific UI issues identified (templates, components, styles, animations, accessibility)
+   3. Make ONLY the UI fixes listed - no other changes
+   4. Do NOT modify logic, backend, data models, or business rules
+   5. Wire UI fixes to the existing logic layer — do not duplicate business logic in UI
+   6. Mark completed items as [x] in tasks comment
+   7. Provide summary of fixes made
+   ```
+
+If both agents need to run, run @agent_1 first (logic fixes), then @agent_3 (UI fixes) so the UI agent works against up-to-date logic code.
 
 4. Update $MODIFIED_FILES with newly changed files
 5. Spawn @agent_2 again to review
-6. Repeat until 90%+ compliance AND both agents agree
+6. Repeat until 90%+ compliance AND all agents agree
 
 ---
 

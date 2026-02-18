@@ -88,6 +88,14 @@ Read from issue comments:
 - Extract API design (if applicable)
 - Extract testing strategy
 - Extract development phases
+- **Extract UI sections (if present):**
+  - UI component hierarchy
+  - Screen/page breakdown
+  - UI state management approach
+  - Styling approach and design system
+  - Animations and transitions
+  - Accessibility requirements
+  - UI testing strategy
 
 **From Architecture Comment (if available):**
 - Extract key architectural patterns
@@ -110,19 +118,23 @@ Every task MUST strictly follow this format:
 1. **Checkbox**: ALWAYS start with `- [ ]` (markdown checkbox)
 2. **Task ID**: Sequential number (T001, T002, T003...) in execution order
 3. **[P] marker**: Include ONLY if task is parallelizable (different files, no dependencies)
-4. **[Story] label**: REQUIRED for user story phase tasks only
+4. **[UI] marker**: Include if this task is a UI task (templates, components, views, pages, layouts, styles, animations). Logic tasks do NOT get this marker.
+5. **[Story] label**: REQUIRED for user story phase tasks only
    - Format: [US1], [US2], [US3], etc. (maps to user stories from spec)
    - Setup phase: NO story label
    - Foundational phase: NO story label
    - User Story phases: MUST have story label
    - Polish phase: NO story label
-5. **Description**: Clear action with exact file path
+6. **Description**: Clear action with exact file path
 
 **Examples:**
 - `- [ ] T001 Create project structure per implementation plan`
 - `- [ ] T005 [P] Implement authentication middleware in src/middleware/auth.py`
 - `- [ ] T012 [P] [US1] Create User model in src/models/user.py`
 - `- [ ] T014 [US1] Implement UserService in src/services/user_service.py`
+- `- [ ] T015 [P] [UI] [US1] Create LoginForm component in src/components/LoginForm.tsx`
+- `- [ ] T016 [UI] [US1] Implement login page layout and styles in src/pages/Login.tsx`
+- `- [ ] T017 [UI] [US1] Add form validation animations in src/components/LoginForm.tsx`
 
 ### Task Organization
 
@@ -186,11 +198,17 @@ Generate the task comment with this structure:
 **Goal**: [Brief description]
 **Independent Test**: [How to verify this story works alone]
 
-### Implementation for User Story 1
+### Logic Implementation for User Story 1
 
 - [ ] T010 [P] [US1] Create [Entity] model in src/models/[entity].py
 - [ ] T011 [US1] Implement [Service] in src/services/[service].py
 - [ ] T012 [US1] Implement [endpoint] in src/[location]/[file].py
+
+### UI Implementation for User Story 1
+
+- [ ] T013 [P] [UI] [US1] Create [Component] in src/components/[Component].tsx
+- [ ] T014 [UI] [US1] Implement [Page] layout and styles in src/pages/[Page].tsx
+- [ ] T015 [UI] [US1] Wire [Component] to [Service] and add interaction states
 
 **Checkpoint**: User Story 1 fully functional and testable independently
 
@@ -287,18 +305,29 @@ Post a summary comment on the issue:
 
 **Tests are OPTIONAL**: Only generate test tasks if explicitly requested in the spec or user requests TDD approach.
 
+**Logic vs UI Task Separation (CRITICAL):**
+- A single task must NEVER mix logic and UI work. If a feature requires both, split it into separate tasks.
+- **Logic tasks** (no [UI] marker): data models, services, business logic, API endpoints, middleware, controllers, hooks, utilities, backend configuration.
+- **UI tasks** ([UI] marker): templates, components, views, pages, layouts, CSS/styles, animations, transitions, design system integration, accessibility markup.
+- UI tasks should be listed AFTER their corresponding logic tasks within each phase — the UI agent needs the logic layer to exist before wiring to it.
+- If a task seems to require both (e.g., "Create user profile page with data fetching"), split it:
+  - Logic task: "Implement UserProfile service/hook with data fetching in src/services/userProfile.ts"
+  - UI task: "Create UserProfile page component wired to UserProfile service in src/pages/UserProfile.tsx"
+
 **Within Each User Story:**
 - Tests (if included) MUST be written and FAIL before implementation
 - Models before services
 - Services before endpoints
-- Core implementation before integration
+- Core logic implementation before UI implementation
+- **All logic tasks before UI tasks** (UI wires to the logic layer)
 - Story complete before moving to next priority
 
 **Notes:**
 - [P] tasks = different files, no dependencies
+- [UI] tasks = handled by the UI implementation agent, not the logic agent
 - [Story] label maps task to specific user story for traceability
 - Each user story should be independently completable and testable
 - Commit after each task or logical group
 - Stop at any checkpoint to validate story independently
-- Avoid: vague tasks, same file conflicts, cross-story dependencies that break independence
+- Avoid: vague tasks, same file conflicts, cross-story dependencies that break independence, mixing logic and UI in a single task
 - The tasks comment should be immediately executable - each task must be specific enough that an LLM can complete it without additional context

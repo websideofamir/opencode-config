@@ -10,8 +10,10 @@ You are the agent for the speckit.plan workflow. Your role is to take a validate
 
 **FIRST** - Parse the initial user prompt to extract:
 - Environment context = $1 (contains repo, branch, issue_number, issue_title)
-- Agent name @agent_1 = $2 (planning agent)
-- Agent name @agent_2 = $3 (review agent)
+- Agent name @agent_1 = @codex
+- Agent name @agent_2 = default @codexUI
+- Agent name @agent_3 = default @review
+
 
 **Variables:**
 - $REPO = repo from $1
@@ -200,7 +202,7 @@ You're creating a detailed implementation plan based on architectural analysis.
 
 **Progress Checklist Format:**
 Use markdown checkboxes for ALL major implementation items:
-```markdown
+
 ## Progress Checklist
 - [ ] Phase 1: Core data models
   - [ ] User model with validation
@@ -211,7 +213,7 @@ Use markdown checkboxes for ALL major implementation items:
 - [ ] Phase 3: Integration & Testing
   - [ ] Integration with existing services
   - [ ] Unit and integration tests
-```
+
 This checklist will be used during execution to track progress.
 ```
 
@@ -226,11 +228,68 @@ This checklist will be used during execution to track progress.
 
 ---
 
-## Phase 3: Review
+## Phase 2.5: UI Detection & Planning
 
-**Step 1: Spawn @agent_2 (Review Agent)**
+**Step 1: Determine UI Requirement**
+
+Analyze the $SPEC_CONTEXT to determine if this feature includes a UI component:
+- Check for user stories involving visual interactions, screens, forms, dashboards, etc.
+- Check for functional requirements referencing UI elements, layouts, components, pages, etc.
+- Check the architectural analysis for frontend/client-side components
+
+**If NO UI component is detected:** Skip to Phase 3.
+
+**If UI component IS detected:** Proceed to Step 2.
+
+**Step 2: Spawn @agent_2 (UI Planning Agent)**
 
 Send this prompt to @agent_2:
+
+```
+You're adding UI implementation details to an existing implementation plan.
+
+=== CONTEXT PROVIDED ===
+{$SPEC_CONTEXT}
+=== END CONTEXT ===
+
+**GitHub Issue:** $REPO#$ISSUE_NUMBER
+
+**Instructions:**
+1. Read the plan comment on the issue (referenced in the issue body table)
+2. Read the architecture comment on the issue (referenced in the issue body table)
+3. OPTIONAL: Read the spec comment if needed
+4. Analyze the existing plan and identify where UI implementation details are needed
+5. **Add UI-specific sections directly into the existing plan** — do NOT create a separate plan. Integrate the following into the appropriate locations within the plan:
+
+   **UI sections to add/integrate:**
+   - **UI Component Hierarchy**: Component tree, parent-child relationships, shared components
+   - **Screen/Page Breakdown**: Each screen with its layout, components, states (loading, empty, error, success)
+   - **UI State Management**: Local vs global state, form state, navigation state
+   - **Interaction Design**: User flows, transitions, animations, gesture handling (if applicable)
+   - **Styling Approach**: Design system usage, theme integration, responsive breakpoints
+   - **Accessibility**: ARIA labels, keyboard navigation, screen reader support
+   - **UI Testing Strategy**: Component tests, visual regression, interaction tests
+
+6. Update the **Progress Checklist** section to include UI implementation tasks as additional checklist items integrated into the existing phases or as a dedicated UI phase
+7. Follow architectural guidelines marked as IMPORTANT
+8. DO NOT write executable code — only illustrative snippets
+9. Return the FULL updated plan (with your UI sections integrated) as your response
+```
+
+**Step 3: Save Updated Plan Comment**
+1. Take the full updated plan returned by @agent_2
+2. **Edit** the existing plan comment on the issue with the updated content (the plan comment reference already exists from Phase 2)
+3. If save failed:
+   - Retry up to MAX_RETRIES times
+   - If all retries fail: TERMINATE with `Err:UI_PLAN_FAILED`
+
+---
+
+## Phase 3: Review
+
+**Step 1: Spawn @agent_3 (Review Agent)**
+
+Send this prompt to @agent_3:
 
 ```
 You're reviewing an implementation plan for feasibility and architectural alignment.
@@ -246,30 +305,34 @@ You're reviewing an implementation plan for feasibility and architectural alignm
 2. Read the plan comment on the issue (referenced in the issue body table)
 3. OPTIONAL: Read the spec comment if needed
 4. Evaluate using these criteria:
-   - **Implementation Feasibility (40%)**: Is the plan detailed enough? Does it follow guidelines?
-   - **Architectural Alignment (30%)**: Does it align with architectural decisions?
+   - **Implementation Feasibility (30%)**: Is the plan detailed enough? Does it follow guidelines?
+   - **Architectural Alignment (25%)**: Does it align with architectural decisions?
    - **Completeness (20%)**: Are all requirements covered? Testing strategy?
+   - **UI Quality (15%)**: If the plan contains UI sections — are component hierarchies clear? Are all screens/states covered (loading, empty, error, success)? Is the styling approach consistent? Are accessibility and responsive concerns addressed? Is UI testing covered? _(If no UI sections exist, redistribute this weight equally to Implementation and Completeness.)_
    - **Integration Quality (10%)**: Proper integration with prior tasks?
 
 5. Provide your review in this format:
 
 **Overall Score:** XX%
 
-**Implementation Score:** XX% (40% weight)
+**Implementation Score:** XX% (30% weight)
 - [Specific feedback]
 
-**Architectural Score:** XX% (30% weight)
+**Architectural Score:** XX% (25% weight)
 - [Specific feedback]
 
 **Completeness Score:** XX% (20% weight)
 - [Specific feedback]
 
+**UI Quality Score:** XX% (15% weight) _(or N/A if no UI)_
+- [Specific feedback on component design, state coverage, accessibility, styling, UI testing]
+
 **Integration Score:** XX% (10% weight)
 - [Specific feedback]
 
-**Critical Issues:** [Must-fix items, if any]
+**Critical Issues:** [Must-fix items, if any — tag each as LOGIC, ARCH, or UI]
 
-**Recommendations:** [Specific improvements needed]
+**Recommendations:** [Specific improvements needed — tag each as LOGIC, ARCH, or UI]
 
 **Final Decision:**
 - If 90%+: "PASS - Ready for implementation"
@@ -277,7 +340,7 @@ You're reviewing an implementation plan for feasibility and architectural alignm
 ```
 
 **Step 2: Analyze Review**
-1. Receive review from @agent_2
+1. Receive review from @agent_3
 2. Store as $REVIEW_FEEDBACK
 3. Extract overall score as $OVERALL_SCORE
 4. If $OVERALL_SCORE >= 90: Proceed to Phase 5
@@ -291,18 +354,41 @@ You're reviewing an implementation plan for feasibility and architectural alignm
 
 **Step 1: Categorize Issues**
 From $REVIEW_FEEDBACK, extract:
-- Architectural issues (if any)
-- Implementation issues (if any)
+- Architectural issues (if any) — tagged ARCH
+- Implementation/logic issues (if any) — tagged LOGIC
+- UI issues (if any) — tagged UI
 
 **Step 2: Refine Based on Issues**
 
-**If Architectural Issues Exist:**
+**If Architectural Issues Exist (ARCH):**
 Spawn architect/review agent to fix the architecture comment on the issue.
 
-**If Implementation Issues Exist:**
-Spawn @agent_1 to fix the plan comment on the issue.
+**If Implementation/Logic Issues Exist (LOGIC):**
+Spawn @agent_1 to fix the logic portions of the plan comment on the issue.
 
-After receiving updates, **edit** the respective comments on the issue.
+**If UI Issues Exist (UI):**
+Spawn @agent_2 with the following prompt:
+
+```
+You're fixing UI-related issues in an existing implementation plan based on review feedback.
+
+=== REVIEW FEEDBACK (UI ISSUES ONLY) ===
+{UI issues extracted from $REVIEW_FEEDBACK}
+=== END FEEDBACK ===
+
+**GitHub Issue:** $REPO#$ISSUE_NUMBER
+
+**Instructions:**
+1. Read the plan comment on the issue (referenced in the issue body table)
+2. Read the architecture comment if needed for context
+3. Address ONLY the UI-related issues identified in the review feedback
+4. Fix the UI sections within the plan (component hierarchy, screen breakdowns, state management, styling, accessibility, UI testing, etc.)
+5. Do NOT modify logic/backend sections of the plan — only touch UI-related content
+6. Update the Progress Checklist if UI tasks need adjustment
+7. Return the FULL updated plan (with UI fixes applied) as your response
+```
+
+After receiving updates from each agent, **edit** the respective comments on the issue. If both @agent_1 and @agent_2 need to update the plan comment, run @agent_1 first (logic fixes), save, then run @agent_2 on the updated plan (UI fixes), and save again.
 
 **Step 3: Re-evaluate**
 1. Increment REFINEMENT_COUNT
