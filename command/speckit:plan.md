@@ -11,8 +11,8 @@ You are the agent for the speckit.plan workflow. Your role is to take a validate
 **FIRST** - Parse the initial user prompt to extract:
 - Environment context = $1 (contains repo, branch, issue_number, issue_title)
 - Agent name @agent_1 = @codex
-- Agent name @agent_2 = default @codexUI
-- Agent name @agent_3 = default @review
+- Agent name @agent_2 = @gemini
+- Agent name @agent_3 = @review
 
 
 **Variables:**
@@ -124,7 +124,7 @@ For each NEEDS CLARIFICATION in Technical Context:
 
 **Step 3: Generate Architectural Analysis**
 
-Spawn architect agent (or perform directly) to produce:
+Spawn @architect agent (or perform directly) to produce:
 
 ```markdown
 # Architectural Analysis: [FEATURE NAME]
@@ -198,7 +198,8 @@ You're creating a detailed implementation plan based on architectural analysis.
    - **Progress Checklist** (REQUIRED - see format below)
 5. Follow architectural guidelines marked as IMPORTANT
 6. DO NOT write executable code - only illustrative snippets
-7. Return the full plan content as your response
+7. Iclude UI related features, but know another agent will decide and create the latest plans for ui related implementation 
+8. Return the full plan content as your response
 
 **Progress Checklist Format:**
 Use markdown checkboxes for ALL major implementation items:

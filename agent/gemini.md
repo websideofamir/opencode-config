@@ -1,7 +1,7 @@
 ---
 description: General coding and planning agent
 mode: subagent
-model: cliproxy/gpt-5.3-codex(xhigh)
+model: antigravity/gemini-3-pro-high
 tools:
   write: true
   edit: true

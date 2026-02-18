@@ -10,9 +10,9 @@ You are the agent for the speckit.implement workflow. Your role is to execute th
 
 **FIRST** - Parse the initial user prompt to extract:
 - Environment context = $1 (contains repo, branch, issue_number, issue_title)
-- Agent name @agent_1 = $2 (implementation agent — logic, backend, data, infrastructure)
-- Agent name @agent_2 = $3 (review agent)
-- Agent name @agent_3 = $4 (UI implementation agent — templates, components, styles, animations) default @codexUI
+- Agent name @agent_1 = @codex (implementation agent — logic, backend, data, infrastructure)
+- Agent name @agent_2 = @gemini (UI implementation agent — templates, components, styles, animations)
+- Agent name @agent_3 = @opus (review agent)
 
 **Variables:**
 - $REPO = repo from $1
@@ -191,9 +191,9 @@ Scan the tasks comment for:
 
 **If UI tasks exist:** Proceed to Step 2.
 
-**Step 2: Spawn @agent_3 (UI Implementation Agent)**
+**Step 2: Spawn @agent_2 (UI Implementation Agent)**
 
-For each phase that has pending UI tasks, spawn @agent_3 with this prompt:
+For each phase that has pending UI tasks, spawn @agent_2 with this prompt:
 
 ```
 You are tasked with implementing UI code — templates, components, styles, and animations — for a development plan.
@@ -225,8 +225,8 @@ Phase: [current phase name]
 ```
 
 **Step 3: Verify UI Completion**
-1. After @agent_3 finishes, verify the UI tasks are marked `[x]` in the tasks comment
-2. If @agent_3 flagged missing logic-layer dependencies, spawn @agent_1 to fill those gaps, then re-run @agent_3 for the affected UI tasks
+1. After @agent_2 finishes, verify the UI tasks are marked `[x]` in the tasks comment
+2. If @agent_2 flagged missing logic-layer dependencies, spawn @agent_1 to fill those gaps, then re-run @agent_2 for the affected UI tasks
 3. Proceed to Phase 3
 
 ---
@@ -254,7 +254,7 @@ After each phase completes:
 
 ## Phase 4: Review Implementation
 
-When all tasks are complete, spawn @agent_2 for review:
+When all tasks are complete, spawn @agent_3 for review:
 
 ```
 You are a code reviewer evaluating plan implementation compliance.
@@ -349,7 +349,7 @@ Spawn @agent_1 with fix instructions:
    ```
 
 **If UI issues exist:**
-Spawn @agent_3 with fix instructions:
+Spawn @agent_2 with fix instructions:
 
    ```
    You are tasked with fixing UI issues based on review feedback.
@@ -370,10 +370,10 @@ Spawn @agent_3 with fix instructions:
    7. Provide summary of fixes made
    ```
 
-If both agents need to run, run @agent_1 first (logic fixes), then @agent_3 (UI fixes) so the UI agent works against up-to-date logic code.
+If both agents need to run, run @agent_1 first (logic fixes), then @agent_2 (UI fixes) so the UI agent works against up-to-date logic code.
 
 4. Update $MODIFIED_FILES with newly changed files
-5. Spawn @agent_2 again to review
+5. Spawn @agent_3 again to review
 6. Repeat until 90%+ compliance AND all agents agree
 
 ---
