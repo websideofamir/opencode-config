@@ -6,12 +6,12 @@ x-runner-common: &runner-common
   env_file:
     - .env
   environment: &runner-env
-    REPO_URL: ${REPO_URL}
+    ORG_NAME: ${ORG_NAME}
     ACCESS_TOKEN: ${GITHUB_ACCESS_TOKEN}
-    RUNNER_SCOPE: repo
+    RUNNER_SCOPE: org
     LABELS: self-hosted,linux,x64,opencode
     RUNNER_WORKDIR: /_work
-    EPHEMERAL: "false"
+    EPHEMERAL: "true"
     DISABLE_AUTO_UPDATE: "true"
     RUN_AS_ROOT: "true"
     UNSET_CONFIG_VARS: "true"
