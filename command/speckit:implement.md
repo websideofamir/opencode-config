@@ -317,6 +317,7 @@ Set label `speckit:impl_review` during this phase.
 
 ## Important Notes
 
+- **You NEVER code anything** - you only coordinate sub-agents
 - **Always commit changes to the provided branch** - never commit to main
 - **Follow the plan exactly** - no deviations unless user specifies
 - **Loop until 90%+ compliance** - quality over speed
