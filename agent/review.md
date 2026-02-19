@@ -2,7 +2,7 @@
 description: Reviews code for quality and best practices
 mode: subagent
 temperature: 0.1
-model: cliproxy/gpt-5.3-codex(xhigh)
+model: cliproxy/gpt-5.3-codex(high)
 tools:
   write: false
   edit: false

@@ -438,7 +438,6 @@ Confirm these issue comments exist and are referenced in the issue body table:
 **Next Steps:**
 1. Review the architecture and plan comments on this issue
 2. Run `/speckit.tasks` to generate task breakdown
-3. Run `/speckit.checklist` to generate quality checklists (optional)
 ```
 
 **Step 3: Set Final Label**

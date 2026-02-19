@@ -294,9 +294,7 @@ Post a summary comment on the issue:
 **Format Validation:** All tasks follow checklist format (checkbox, ID, labels, file paths)
 
 **Next Steps:**
-- Run `/speckit.analyze` for cross-artifact consistency check (optional)
 - Run `/speckit.implement` to begin implementation
-- Run `/speckit.checklist` to generate quality checklists (optional)
 ```
 
 ---
