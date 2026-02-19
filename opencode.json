@@ -526,14 +526,5 @@
     "skill": {
       "ui-ux-pro-max": "deny"
     }
-  },
-  "agent": {
-    "plan": {
-      "permission": {
-        "skill": {
-          "ui-ux-pro-max": "deny"
-        }
-      }
-    }
   }
 }
