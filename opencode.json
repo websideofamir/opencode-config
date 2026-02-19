@@ -523,5 +523,14 @@
       "/tmp/**": "allow"
     },
     "doom_loop": "deny"
+  },
+  "agent": {
+    "plan": {
+      "permission": {
+        "skill": {
+          "ui-ux-pro-max": "deny"
+        }
+      }
+    }
   }
 }
