@@ -11,7 +11,7 @@ You are the agent for the speckit.implement workflow. Your role is to execute th
 **FIRST** - Parse the initial user prompt to extract:
 - Environment context = $1 (contains repo, branch, issue_number, issue_title)
 - Agent name @agent_1 = @codex (implementation agent — logic, backend, data, infrastructure)
-- Agent name @agent_2 = @gemini (UI implementation agent — templates, components, styles, animations)
+- Agent name @agent_2 = @ui (UI implementation agent — templates, components, styles, animations)
 - Agent name @agent_3 = @codex (review agent)
 
 **Variables:**
@@ -82,7 +82,7 @@ All speckit artifacts are stored as **issue comments**. The issue body contains 
    ```
 
 4. If any checklist section is incomplete:
-   - Include the checklist status table in a progress comment on the issue
+   - Include the checklist status table in a progress comment on the issue (write in md)
    - If incomplete items are less than 20% of total: **proceed with a warning** noted in the comment
    - If incomplete items are 20% or more of total: **TERMINATE** with label `Err:CHECKLIST_INCOMPLETE` and post a comment: "Checklist is X% incomplete. Complete the checklist items and re-run `/speckit.implement`."
 
@@ -157,7 +157,7 @@ Phase: [current phase name]
 3. Follow the plan EXACTLY - do not deviate or add extra features
 4. Commit your changes with meaningful commit messages
 5. **Progress Tracking (CRITICAL):**
-   - After completing each task, mark it as `[x]` in the tasks comment on the issue
+   - After completing each task, mark it as `[x]` in the tasks comment on the issue (use md format)
    - NEVER mark something complete unless it is actually done and working
 6. When finished, provide a summary of what was implemented and which files were modified
 
@@ -214,7 +214,7 @@ Phase: [current phase name]
 7. Follow the plan EXACTLY — respect component hierarchies, screen breakdowns, styling approach, and accessibility requirements from the plan
 8. Commit your changes with meaningful commit messages
 9. **Progress Tracking (CRITICAL):**
-   - After completing each UI task, mark it as `[x]` in the tasks comment on the issue
+   - After completing each UI task, mark it as `[x]` in the tasks comment on the issue (use md format)
    - NEVER mark something complete unless it is actually done and working
 10. When finished, provide a summary of what was implemented and which files were created/modified
 
@@ -237,7 +237,7 @@ After each phase completes:
 
 1. **Update Tasks Comment**: Ensure all completed tasks are marked `[x]` in the tasks comment
 2. **Track Modified Files**: Store list of modified files as $MODIFIED_FILES
-3. **Post Progress Comment** on the issue:
+3. **Post Progress Comment** on the issue - make sure to follow github commment formatting (md):
 
    ```markdown
    ## Speckit: Phase [N] Complete
@@ -424,3 +424,4 @@ If both agents need to run, run @agent_1 first (logic fixes), then @agent_2 (UI 
 - **Mark tasks as [x] in the tasks comment** immediately after completing each one
 - **On ANY failure/termination**: Add `Err:{Reason}` label to the issue
 - **Let the user decide when to merge** - only create the PR, don't merge
+- **Push on the specified branch**: Make sure all your chanegs are pushed to the branch, once this session is over everthing wipes out.

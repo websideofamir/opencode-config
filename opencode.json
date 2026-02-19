@@ -522,7 +522,10 @@
     "external_directory": {
       "/tmp/**": "allow"
     },
-    "doom_loop": "deny"
+    "doom_loop": "deny",
+    "skill": {
+      "ui-ux-pro-max": "deny"
+    }
   },
   "agent": {
     "plan": {

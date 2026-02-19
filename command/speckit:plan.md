@@ -11,7 +11,7 @@ You are the agent for the speckit.plan workflow. Your role is to take a validate
 **FIRST** - Parse the initial user prompt to extract:
 - Environment context = $1 (contains repo, branch, issue_number, issue_title)
 - Agent name @agent_1 = @codex
-- Agent name @agent_2 = @gemini
+- Agent name @agent_2 = @ui
 - Agent name @agent_3 = @review
 
 

@@ -257,3 +257,4 @@ You are tasked with implementing fixes based on the development plan.
 - **Loop until 90%+ compliance** - quality is more important than speed
 - **Maintain clear communication** - keep user informed of progress and issues
 - **On ANY failure/termination**: Add `Err:{Reason}` label to the issue before stopping
+- **Push on the specified branch**: Make sure all your chanegs are pushed to the branch, once this session is over everthing wipes out.
